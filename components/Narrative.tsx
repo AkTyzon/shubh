@@ -130,7 +130,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
           >
             Explain this plan
           </button>
-          <KeyField value={apiKey} onChange={setApiKey} />
+          <KeyField value={apiKey} onChange={setApiKey} invite={!providerLabel} />
         </div>
       ) : (
         <div className="grid gap-4">
@@ -226,7 +226,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
           </form>
 
           <div className="no-print">
-            <KeyField value={apiKey} onChange={setApiKey} />
+            <KeyField value={apiKey} onChange={setApiKey} invite={!providerLabel} />
           </div>
         </div>
       )}
@@ -326,13 +326,55 @@ function VerificationPanel({ envelope }: { envelope: VerificationEnvelope }) {
   );
 }
 
-/** The bring-your-own-key field, collapsed by default. */
-function KeyField({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+/**
+ * The bring-your-own-key field.
+ *
+ * Collapsed and quiet when the deployment already has a model. Open and
+ * explained when it does not — on a keyless deployment this is the only way to
+ * watch a real model's output pass through the verification gate, so leaving it
+ * behind a muted summary line would hide the most interesting thing here.
+ */
+function KeyField({
+  value,
+  onChange,
+  invite,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  invite: boolean;
+}) {
   return (
-    <details className="no-print text-sm">
-      <summary className="cursor-pointer text-[var(--text-soft)]">
-        Use your own Gemini API key
+    <details
+      open={invite}
+      className={
+        invite
+          ? "no-print rounded-lg border border-[var(--color-cool)] bg-[var(--color-cool-soft)] p-3 text-sm"
+          : "no-print text-sm"
+      }
+    >
+      <summary
+        className={invite ? "cursor-pointer font-semibold" : "cursor-pointer text-[var(--text-soft)]"}
+      >
+        {invite
+          ? "Want to see a real model checked against the plan? Paste a Gemini key"
+          : "Use your own Gemini API key"}
       </summary>
+      {invite && (
+        <p className="mt-2 text-[var(--text-soft)]">
+          This deployment holds no model credentials, so the explanation above is the built-in
+          one — computed from your plan, which is why it verifies perfectly. Paste a key and the
+          same plan is narrated by Gemini instead, with every figure it states extracted and
+          checked against the plan. That is the part worth seeing.{" "}
+          <a
+            href="https://aistudio.google.com/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            A free key takes a minute.
+          </a>
+        </p>
+      )}
       <div className="mt-2 grid gap-1.5">
         <label htmlFor="byo-key" className="font-semibold">
           Gemini API key

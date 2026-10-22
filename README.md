@@ -6,9 +6,10 @@ Plan an Indian wedding, birthday, griha pravesh or society function. Tell Shubh 
 
 The AI explains and suggests. **It never produces a number.** And where it states one anyway, that figure is extracted and checked against the computed plan before you see it — with the result shown to you, not assumed.
 
-- **Live:** https://shubh.vercel.app
+- **Live:** https://shubh-green.vercel.app
+- **Repository:** https://github.com/AkTyzon/shubh
 - **Challenge:** Celebration & Event Planner
-- **Runs with zero API keys.** The arithmetic never needed one.
+- **Runs with zero API keys.** The arithmetic never needed one — and the hosted demo is deliberately deployed without one. See [below](#about-the-hosted-demo).
 
 ---
 
@@ -22,6 +23,14 @@ Four clicks. The home page carries each of these as a one-click example link, so
 | 2 | **Metro wedding, 400 guests, ₹3 lakh** | It refuses. *"₹3.00 lakh across 400 guests is ₹750 a head. A typical wedding at this size and location runs near ₹30.96 lakh — a gap of about ₹27.96 lakh."* Then: *"Reduce to roughly 80 guests, which this budget does cover."* No model wrote that; it is arithmetic. |
 | 3 | **Wedding in ten days** | The money is fine. The *date* is the problem. Tasks that should have been done months ago are listed as overdue with the shortfall in days, rather than silently rescheduled to tomorrow to keep the list looking tidy. |
 | 4 | On any plan, press **Explain this plan** | Text streams in marked *"Generating — not yet verified"*. When it finishes, a panel reports how many of its figures and dates matched the computed plan. Anything invented is **struck through in the text itself**. |
+
+### About the hosted demo
+
+**The deployed instance holds no model credentials**, so pressing *Explain this plan* gives you the built-in narrative from [`lib/narrative.ts`](lib/narrative.ts) — generated from the computed plan, which is why it verifies perfectly every time.
+
+That is honest but it under-sells the interesting part: a narrative built from the plan *cannot* fail verification, so it does not demonstrate the gate catching anything. To see that, **paste a free Gemini key into the field below the explanation.** The same plan is then narrated by a real model, and every figure it writes is extracted and checked. It is sent as a request header for one call, never stored, never logged.
+
+The alternative — shipping a key — was tried and rejected: the free-tier key available for this project could not return a first byte within 30 seconds from Vercel's Mumbai region across three different Gemini models, so every visitor would have waited half a minute to be told the model was unavailable. Degrading to a verified, computed explanation in about a second is the better product, and it is the same fallback the code takes on any provider outage.
 
 **Then disable JavaScript and reload.** The budget, the schedule and the feasibility findings are all still there. The form is a plain `GET` form; the page is computed on the server. Only the AI explanation needs scripting, because it genuinely cannot work without a network call.
 
