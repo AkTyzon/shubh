@@ -64,47 +64,20 @@ jobs:
       # The product's core claim, asserted end to end against the real route
       # handlers with the environment deliberately empty. If this job needs a
       # credential to pass, the claim is false.
-      - name: Compute a plan and verify the narrative with an empty environment
+      #
+      # A script rather than an inline `tsx -e`: that compiles to CommonJS and so
+      # cannot use top-level await, and a check worth gating CI on is worth being
+      # able to run locally.
+      - name: Compute and narrate five plans with an empty environment
         env:
           GEMINI_API_KEY: ""
+          GOOGLE_API_KEY: ""
+          GOOGLE_GENERATIVE_AI_API_KEY: ""
           OPENAI_API_KEY: ""
           ANTHROPIC_API_KEY: ""
           SHUBH_LOCAL_MODEL: ""
-        run: |
-          npx tsx -e '
-            import { POST as ideas } from "./app/api/ideas/route";
-            import { buildPlan } from "./lib/plan";
-            import { splitStreamPayload } from "./lib/wire";
-
-            const input = {
-              eventType: "wedding", eventDate: "2027-07-19", guestCount: 300,
-              cityTier: "metro", totalBudget: 2_500_000, priorities: [],
-              today: new Date().toISOString().slice(0, 10),
-            };
-
-            const plan = buildPlan(input);
-            const lines = plan.budget.lines.reduce((s, l) => s + l.allocated, 0);
-            if (lines + plan.budget.contingency !== plan.budget.total) {
-              throw new Error(`budget does not balance: ${lines} + ${plan.budget.contingency} != ${plan.budget.total}`);
-            }
-
-            const response = await ideas(new Request("https://ci.test/api/ideas", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ input }),
-            }));
-            if (response.status !== 200) throw new Error(`ideas returned ${response.status}`);
-
-            const { text, envelope } = splitStreamPayload(await response.text());
-            if (!text.includes("## Where you stand")) throw new Error("no narrative was produced");
-            if (!envelope) throw new Error("no verification envelope was appended");
-            if (envelope.verification.flagged !== 0) {
-              throw new Error(`the built-in narrative failed its own verification: ${JSON.stringify(envelope.verification)}`);
-            }
-            if (envelope.verification.matched === 0) throw new Error("nothing was actually checked");
-
-            console.log(`OK — ${text.length} chars, ${envelope.verification.matched} figures verified, 0 flagged, no API key`);
-          '
+          SHUBH_LOCAL_BASE_URL: ""
+        run: npx tsx scripts/verify-without-key.ts
 
   security:
     name: Security
@@ -171,16 +144,14 @@ jobs:
           fi
           echo "No raw HTML injection points."
 
-      # 'strict-dynamic' in script-src makes browsers ignore 'self' and
-      # 'unsafe-inline' and trust only nonced scripts. Next emits no nonce here,
-      # so adding it serves every script with a 200 and then has the browser
-      # refuse it: the page renders and nothing works. curl cannot see this —
-      # it neither executes scripts nor enforces CSP — so the guard is here.
-      - name: CSP does not contain strict-dynamic
-        run: |
-          set -euo pipefail
-          if grep -n "strict-dynamic" next.config.ts ; then
-            echo "::error::'strict-dynamic' is back in the CSP. It silently disables all JavaScript."
-            exit 1
-          fi
-          echo "CSP is sound."
+      # Asserts the header value the config actually produces, not the text of
+      # the file. The previous version grepped next.config.ts for
+      # "strict-dynamic" and failed on the comment explaining why it is absent.
+      #
+      # 'strict-dynamic' makes a browser ignore 'self' and 'unsafe-inline' and
+      # trust only nonced scripts. Next emits no nonce here, so adding it serves
+      # every script with a 200 and then has the browser refuse it: the page
+      # renders and nothing works. curl cannot see this, which is why it is a
+      # CI step and not a manual check.
+      - name: Security headers are sound
+        run: npx tsx scripts/check-csp.ts

@@ -238,9 +238,15 @@ The challenge asks for a planning assistant covering *budgets, timelines, vendor
 
 ```bash
 npm ci
-npm run dev          # http://localhost:3000 — fully functional with no API key
-npm run check        # typecheck, lint, 291 tests, production build
+npm run dev             # http://localhost:3000 — fully functional with no API key
+npm run check           # typecheck, lint, 291 tests, both guards, production build
+
+npm run verify:no-key   # computes and narrates five plans with an empty environment,
+                        # failing if any does not balance or does not verify
+npm run verify:csp      # asserts the security headers the config actually serves
 ```
+
+Both guards are the same scripts CI runs, so a failure is reproducible locally rather than only visible in a workflow log.
 
 **To add a model** (optional — see [`.env.example`](.env.example)):
 
