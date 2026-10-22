@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/**
+ * Design tokens.
+ *
+ * The palette is warm — marigold, turmeric, deep maroon — because the subject is
+ * a celebration and a grey analytics dashboard would be the wrong register. It
+ * stops short of decoration: this is a tool people make financial decisions
+ * with, and the numbers have to be the most legible thing on the page.
+ *
+ * Every text/background pairing used for content meets WCAG 2.2 AA (4.5:1 for
+ * body text, 3:1 for large text and UI boundaries). The verdict colours below
+ * are never the only signal — each verdict also carries a word and a glyph, so
+ * the table is readable with no colour perception at all.
+ */
+@theme {
+  --color-cream: #fffaf2;
+  --color-cream-100: #fdf3e5;
+  --color-cream-200: #f6e7d2;
+  --color-ink: #231a14;
+  --color-ink-soft: #5c4a3d;
+  --color-ink-faint: #8a7a6c;
+
+  --color-maroon: #8a1c33;
+  --color-maroon-dark: #6d1427;
+  --color-marigold: #c25e00;
+  --color-marigold-soft: #fbe9d4;
+  --color-turmeric: #8a6500;
+
+  --color-good: #1f6b3a;
+  --color-good-soft: #e3f3e8;
+  --color-warn: #8a5200;
+  --color-warn-soft: #fdeed6;
+  --color-bad: #a01c1c;
+  --color-bad-soft: #fbe4e4;
+  --color-cool: #1b5a7a;
+  --color-cool-soft: #e2f0f7;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+:root {
+  --surface: var(--color-cream);
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--color-cream-100);
+  --border: #e8d9c3;
+  --border-strong: #cdb99c;
+  --text: var(--color-ink);
+  --text-soft: var(--color-ink-soft);
+  --accent: var(--color-maroon);
+  --accent-contrast: #ffffff;
+  --focus: #0b4f9c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: #17120e;
+    --surface-raised: #211a15;
+    --surface-sunken: #120e0b;
+    --border: #3a2e25;
+    --border-strong: #574538;
+    --text: #f6ecdf;
+    --text-soft: #c9b7a4;
+    --accent: #ffb088;
+    --accent-contrast: #2a1208;
+    --focus: #8ec5ff;
+
+    /* Re-tuned for a dark surface: the light-mode verdict colours fall below
+       4.5:1 against it, and a verdict nobody can read is worse than none. */
+    --color-good: #6ddc96;
+    --color-good-soft: #15301f;
+    --color-warn: #f2bc62;
+    --color-warn-soft: #332410;
+    --color-bad: #ff9b9b;
+    --color-bad-soft: #351717;
+    --color-cool: #7cc7ec;
+    --color-cool-soft: #122a36;
+    --color-marigold: #ffb570;
+    --color-marigold-soft: #33210f;
+    --color-maroon: #ff9eb0;
+  }
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Anchored sections land below the sticky header rather than under it. */
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/**
+ * A single visible focus style, applied to everything.
+ *
+ * Two pixels of solid outline plus an offset ring, so it is visible against both
+ * the cream and the raised white surfaces. `:focus-visible` rather than `:focus`
+ * keeps it off mouse clicks while keeping it for every keyboard user.
+ */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Tabular figures everywhere a number is compared against another number.
+   Proportional digits make a column of rupee amounts impossible to scan. */
+.nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  border-radius: 0 0 0.5rem 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/**
+ * Print styles.
+ *
+ * A plan gets printed, or saved as a PDF and sent to family — that is how a
+ * budget actually circulates. So printing is a real output, not an afterthought:
+ * controls and the form drop out, the narrative and tables stay, and link targets
+ * are not expanded because a printed budget covered in URLs is unreadable.
+ */
+@media print {
+  :root {
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #ffffff;
+    --text: #000000;
+    --text-soft: #333333;
+    --border: #999999;
+  }
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #ffffff;
+    font-size: 11pt;
+  }
+  /* Keep a budget line or a task from splitting across a page break. */
+  tr,
+  li,
+  .avoid-break {
+    break-inside: avoid;
+  }
+  a[href]::after {
+    content: "";
+  }
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+}
+
+/**
+ * Markdown rendering for generated narrative.
+ *
+ * Scoped with a class rather than applied globally, because the only HTML that
+ * ends up inside it comes from `react-markdown` — which builds React elements
+ * rather than setting innerHTML, so a model cannot inject markup here.
+ */
+.prose-shubh {
+  line-height: 1.7;
+}
+.prose-shubh h2 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.625rem;
+  color: var(--text);
+}
+.prose-shubh h2:first-child {
+  margin-top: 0;
+}
+.prose-shubh h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.5rem;
+}
+.prose-shubh p {
+  margin: 0.75rem 0;
+}
+.prose-shubh ul,
+.prose-shubh ol {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+.prose-shubh ul {
+  list-style: disc;
+}
+.prose-shubh ol {
+  list-style: decimal;
+}
+.prose-shubh li {
+  margin: 0.4rem 0;
+}
+.prose-shubh strong {
+  font-weight: 650;
+  color: var(--text);
+}
+.prose-shubh em {
+  color: var(--text-soft);
+}
+.prose-shubh a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-shubh table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9375rem;
+}
+.prose-shubh th,
+.prose-shubh td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+}
+.prose-shubh th {
+  background: var(--surface-sunken);
+  font-weight: 600;
+}
+.prose-shubh code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--surface-sunken);
+  padding: 0.125rem 0.3rem;
+  border-radius: 0.25rem;
+}
+.prose-shubh blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.875rem;
+  margin: 1rem 0;
+  color: var(--text-soft);
+}

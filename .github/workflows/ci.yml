@@ -1,0 +1,186 @@
+name: CI
+
+# Pushes and pull requests both run the full gate. `workflow_dispatch` is here so
+# a deployment can be re-verified without an empty commit.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Types, lint, tests, build (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the floor declared in package.json engines; 22 is current LTS.
+        # Both are tested because a version-specific failure in Intl or the test
+        # runner is exactly the kind that reaches production unnoticed.
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it installs the lockfile exactly and
+      # fails if package.json and the lock have drifted.
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+  engines:
+    name: Engines hold without any API key
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The product's core claim, asserted end to end against the real route
+      # handlers with the environment deliberately empty. If this job needs a
+      # credential to pass, the claim is false.
+      - name: Compute a plan and verify the narrative with an empty environment
+        env:
+          GEMINI_API_KEY: ""
+          OPENAI_API_KEY: ""
+          ANTHROPIC_API_KEY: ""
+          SHUBH_LOCAL_MODEL: ""
+        run: |
+          npx tsx -e '
+            import { POST as ideas } from "./app/api/ideas/route";
+            import { buildPlan } from "./lib/plan";
+            import { splitStreamPayload } from "./lib/wire";
+
+            const input = {
+              eventType: "wedding", eventDate: "2027-07-19", guestCount: 300,
+              cityTier: "metro", totalBudget: 2_500_000, priorities: [],
+              today: new Date().toISOString().slice(0, 10),
+            };
+
+            const plan = buildPlan(input);
+            const lines = plan.budget.lines.reduce((s, l) => s + l.allocated, 0);
+            if (lines + plan.budget.contingency !== plan.budget.total) {
+              throw new Error(`budget does not balance: ${lines} + ${plan.budget.contingency} != ${plan.budget.total}`);
+            }
+
+            const response = await ideas(new Request("https://ci.test/api/ideas", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ input }),
+            }));
+            if (response.status !== 200) throw new Error(`ideas returned ${response.status}`);
+
+            const { text, envelope } = splitStreamPayload(await response.text());
+            if (!text.includes("## Where you stand")) throw new Error("no narrative was produced");
+            if (!envelope) throw new Error("no verification envelope was appended");
+            if (envelope.verification.flagged !== 0) {
+              throw new Error(`the built-in narrative failed its own verification: ${JSON.stringify(envelope.verification)}`);
+            }
+            if (envelope.verification.matched === 0) throw new Error("nothing was actually checked");
+
+            console.log(`OK — ${text.length} chars, ${envelope.verification.matched} figures verified, 0 flagged, no API key`);
+          '
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # Gated on what actually ships. The full tree currently carries one
+      # unfixable advisory in `braces`, reached only through ESLint's globber at
+      # lint time: there is no patched release (the advisory covers every
+      # published version) and npm's sole remedy is downgrading to Next 14. It is
+      # not in the production bundle and never sees user input, so the gate is
+      # production-only and the full audit is reported for visibility.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Full audit (informational)
+        run: npm audit || true
+        continue-on-error: true
+
+      # Greps for credential *shapes*, not variable names. An earlier version of
+      # this check searched for the string "GEMINI_API_KEY" and failed on the
+      # app's own help text telling the user which variable to set.
+      - name: No credentials committed
+        run: |
+          set -euo pipefail
+          patterns='AIza[0-9A-Za-z_-]{30,}|AQ\.[0-9A-Za-z_.-]{25,}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9-]{20,}|ghp_[A-Za-z0-9]{30,}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+          if grep -rInE "$patterns" \
+               --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.next \
+               --exclude=package-lock.json . ; then
+            echo "::error::A value shaped like a credential is committed. Rotate it, then remove it."
+            exit 1
+          fi
+          echo "No credential-shaped strings found."
+
+      - name: No secrets reachable from the client bundle
+        run: |
+          set -euo pipefail
+          npm run build
+          # Any real key would appear verbatim in a client chunk. Searching the
+          # built output catches an accidental NEXT_PUBLIC_ exposure that reading
+          # the source would not.
+          if grep -rIE 'AIza[0-9A-Za-z_-]{30,}|sk-[A-Za-z0-9]{20,}' .next/static 2>/dev/null; then
+            echo "::error::A credential shape is present in the client bundle."
+            exit 1
+          fi
+          echo "Client bundle is clean."
+
+      # The CSP permits 'unsafe-inline' for Next's bootstrap script, so the
+      # mitigation that matters is that no HTML is ever rendered from user or
+      # model input. This keeps that true.
+      - name: No raw HTML injection points
+        run: |
+          set -euo pipefail
+          if grep -rn "dangerouslySetInnerHTML\|innerHTML\s*=" \
+               --include="*.ts" --include="*.tsx" app lib components ; then
+            echo "::error::Raw HTML is being injected. Model output must never be rendered as HTML."
+            exit 1
+          fi
+          echo "No raw HTML injection points."
+
+      # 'strict-dynamic' in script-src makes browsers ignore 'self' and
+      # 'unsafe-inline' and trust only nonced scripts. Next emits no nonce here,
+      # so adding it serves every script with a 200 and then has the browser
+      # refuse it: the page renders and nothing works. curl cannot see this —
+      # it neither executes scripts nor enforces CSP — so the guard is here.
+      - name: CSP does not contain strict-dynamic
+        run: |
+          set -euo pipefail
+          if grep -n "strict-dynamic" next.config.ts ; then
+            echo "::error::'strict-dynamic' is back in the CSP. It silently disables all JavaScript."
+            exit 1
+          fi
+          echo "CSP is sound."
