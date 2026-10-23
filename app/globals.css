@@ -53,6 +53,20 @@
 
   --focus: #0b4f9c;
 
+  /**
+   * How loud the ornament is allowed to be.
+   *
+   * Tokens rather than fixed utility classes, because the same warm gold that
+   * is a faint wash over cream becomes a dominant pattern over deep plum — the
+   * rangoli at a single fixed opacity was legible decoration by day and was
+   * competing with the headline by night.
+   */
+  --decor-rangoli: 0.17;
+  --decor-jaali: 0.055;
+  --decor-jaali-band: 0.07;
+  --decor-arch: 0.2;
+  --decor-confetti: 0.2;
+
   --radius: 0.875rem;
   --shadow-soft: 0 1px 2px rgb(34 24 36 / 0.05), 0 8px 24px -12px rgb(34 24 36 / 0.12);
   --shadow-lift: 0 2px 4px rgb(34 24 36 / 0.06), 0 18px 40px -20px rgb(34 24 36 / 0.22);
@@ -87,6 +101,14 @@
     --cool-soft: #112935;
 
     --focus: #8ec5ff;
+
+    /* Roughly a third of the light-mode values. Gold on a dark surface reads as
+       far more present than the same gold on cream. */
+    --decor-rangoli: 0.06;
+    --decor-jaali: 0.02;
+    --decor-jaali-band: 0.03;
+    --decor-arch: 0.1;
+    --decor-confetti: 0.14;
 
     --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
     --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.45), 0 18px 40px -20px rgb(0 0 0 / 0.75);
@@ -666,5 +688,343 @@ h3,
   }
   a[href]::after {
     content: "";
+  }
+}
+
+/* ===================================================================== */
+/* 11. Landing page                                                      */
+/*                                                                       */
+/* The sections below are what turn this from a form on a page into      */
+/* something worth scrolling. Everything here is decorative: remove the  */
+/* whole block and the product still works, which is the test each piece */
+/* had to pass before it was allowed in.                                 */
+/* ===================================================================== */
+
+/**
+ * Full-bleed sections.
+ *
+ * The planner itself is a reading-width column, but a landing page that never
+ * touches the edge of the window looks like a document rather than a site. These
+ * break out of the content column and run the full width.
+ */
+.bleed {
+  width: 100vw;
+  margin-left: 50%;
+  transform: translateX(-50%);
+  max-width: 100vw;
+}
+
+/**
+ * The hero's animated mesh.
+ *
+ * Four radial gradients in the occasion's two hues, drifting slowly against each
+ * other. Pure CSS — no canvas, no image, nothing to download — and the whole
+ * thing is behind `prefers-reduced-motion`, which freezes it rather than
+ * removing it, so the colour stays and only the movement goes.
+ */
+.mesh {
+  position: absolute;
+  inset: -20%;
+  /* Weighted to the right, so the left half -- where the headline and body copy
+     sit -- stays close to the page surface and keeps its contrast ratio. An
+     earlier version spread the colour evenly and the subhead was grey on pink. */
+  background:
+    radial-gradient(circle at 78% 22%, hsl(var(--glow-b) 85% 58% / 0.3), transparent 48%),
+    radial-gradient(circle at 92% 62%, hsl(var(--glow-a) 80% 55% / 0.26), transparent 46%),
+    radial-gradient(circle at 58% 88%, hsl(var(--glow-a) 70% 48% / 0.16), transparent 50%),
+    radial-gradient(circle at 12% 12%, hsl(var(--glow-b) 75% 52% / 0.12), transparent 42%);
+  filter: blur(58px) saturate(118%);
+  animation: drift 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, -2.5%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-2.5%, 2%, 0) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesh {
+    animation: none;
+  }
+}
+
+/** The rangoli, turning slowly behind the hero. Decorative, `alt=""`. */
+.rangoli-spin {
+  animation: spin 150s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/** Gentle vertical drift, for the floating decorative pieces. */
+.float {
+  animation: float 7s ease-in-out infinite;
+}
+.float-slow {
+  animation: float 11s ease-in-out infinite;
+}
+.float-delay {
+  animation-delay: -3.5s;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+/** A diya flame, flickering. */
+@keyframes flicker {
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1);
+    opacity: 0.95;
+  }
+  35% {
+    transform: scaleY(1.14) scaleX(0.92);
+    opacity: 1;
+  }
+  70% {
+    transform: scaleY(0.94) scaleX(1.05);
+    opacity: 0.85;
+  }
+}
+.flame {
+  transform-origin: bottom center;
+  animation: flicker 2.2s ease-in-out infinite;
+}
+
+/**
+ * Scroll-triggered reveals, with no JavaScript.
+ *
+ * `animation-timeline: view()` ties the animation to the element's position in
+ * the viewport, so sections rise into place as they are scrolled to without a
+ * single byte of script or an IntersectionObserver.
+ *
+ * Wrapped in `@supports` deliberately. Where view timelines are unsupported the
+ * rule never applies at all, so the content is simply there — rather than being
+ * left at `opacity: 0` by an animation that cannot run, which is the standard way
+ * this technique hides an entire page from a browser that does not support it.
+ */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 62%;
+    }
+  }
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(34px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/**
+ * Display type that scales with the viewport.
+ *
+ * `clamp` rather than breakpoints: a headline that steps between three fixed
+ * sizes looks wrong at every width in between, and this one is the first thing
+ * anybody sees.
+ */
+.headline {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.subhead {
+  font-size: clamp(1.0625rem, 1.9vw, 1.375rem);
+  line-height: 1.6;
+}
+
+.section-title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+/**
+ * The accent sweep on the headline.
+ *
+ * A moving gradient clipped to the text. It is a gradient on live text rather
+ * than an image, so it stays selectable, searchable and readable at any zoom.
+ */
+.sweep {
+  background: linear-gradient(
+    100deg,
+    hsl(var(--glow-a) 85% 62%),
+    hsl(var(--glow-b) 90% 60%),
+    hsl(var(--glow-a) 85% 62%)
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: sweep 9s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/** The jaali texture, used at very low opacity as a background. */
+.jaali {
+  background-image: url("/art/jaali.svg");
+  background-size: 80px 80px;
+  background-repeat: repeat;
+}
+
+/** The toran, tiled across the top of a band. */
+.toran {
+  background-image: url("/art/toran.svg");
+  background-size: 200px 60px;
+  background-repeat: repeat-x;
+  height: 60px;
+  /* Gold on a warm wash disappears, so the garland gets a soft shadow to lift it
+     off whatever is behind it. */
+  filter: drop-shadow(0 2px 3px rgb(90 40 10 / 0.3));
+}
+
+/**
+ * The stats band.
+ *
+ * Deep, saturated, full width — a hard stop between the hero and the rest, so
+ * the page has a rhythm rather than being one long scroll of cards.
+ */
+.band {
+  background:
+    linear-gradient(
+      180deg,
+      hsl(var(--glow-a) 42% 12% / 0.96),
+      hsl(var(--glow-b) 38% 10% / 0.96)
+    ),
+    var(--surface-sunken);
+  color: #fdf4ea;
+}
+.band .band-value {
+  color: hsl(var(--glow-b) 88% 70%);
+}
+.band .band-label {
+  color: #e6d3c4;
+}
+
+/** A soft glow behind a focal element. */
+.halo {
+  position: relative;
+}
+.halo::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle, hsl(var(--glow-a) 80% 58% / 0.3), transparent 68%);
+  filter: blur(30px);
+}
+
+/** The step connector on "how it works". */
+.steps {
+  counter-reset: step;
+}
+.step-number {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1.0625rem;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+
+/**
+ * A preview of the real interface, used in the feature rows.
+ *
+ * Built from the same primitives as the product rather than being a screenshot:
+ * it cannot go stale, it costs nothing to download, and it re-themes with the
+ * rest of the page.
+ */
+.mock {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  overflow: hidden;
+}
+.mock-bar {
+  display: flex;
+  height: 1.5rem;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.mock-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+}
+.mock-row:last-child {
+  border-bottom: 0;
+}
+
+@media print {
+  .mesh,
+  .rangoli-spin,
+  .float,
+  .float-slow,
+  .toran,
+  .jaali,
+  .halo::before {
+    display: none !important;
+    animation: none !important;
+  }
+  .bleed {
+    width: auto;
+    margin-left: 0;
+    transform: none;
+  }
+  .band {
+    background: #ffffff;
+    color: #000000;
+  }
+  .sweep {
+    background: none;
+    -webkit-text-fill-color: #000000;
+    color: #000000;
   }
 }

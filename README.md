@@ -185,11 +185,13 @@ Streaming degrades in stages: streaming → three retries with jittered backoff 
 - **Split timeouts** on model calls: one budget for the first byte, a separate idle budget between chunks. A single wall-clock deadline was the original design and it was a bug — a local 8B model producing a long structured answer streams healthily for minutes, and a 60-second ceiling aborted it mid-sentence.
 - **The markdown parser is not in the first load.** `react-markdown` plus `remark-gfm` is 42 KB gzipped of micromark, and it is dead weight for every visitor who reads their plan without asking for an explanation. It is a separate chunk, loaded on demand and warmed the instant the button is pressed so it arrives alongside the first tokens. First-load JavaScript dropped from 234 KB to 190 KB gzipped — and none of it is needed to read the plan at all.
 - **Links to example plans use `prefetch={false}`.** Six dynamic pages are not worth prefetching on a mobile connection just because the cards are on screen.
-- **The whole visual redesign costs nothing to download.** Gradients, the garland, the budget bar and the timeline spine are all CSS — no images, no icon font, no chart library. Occasion theming is one `data-occasion` attribute resolving CSS custom properties, so switching occasions ships no JavaScript at all.
+- **The artwork is 12 KB of generated SVG, total.** The rangoli, toran, jaali lattice and mandap arch are produced by [`scripts/generate-art.ts`](scripts/generate-art.ts) — vector, so they stay sharp at any zoom, cost nothing like a photograph would on an Indian mobile connection, and a palette change is a one-line edit and a re-run. No icon font, no chart library, no stock imagery.
+- **Every animation is CSS.** The drifting hero mesh, the turning rangoli, the floating diyas and the scroll reveals are all keyframes and `animation-timeline: view()` — there is no IntersectionObserver, no animation library, and no JavaScript involved in any of it.
+- **Occasion theming is one attribute.** `data-occasion` resolves a set of CSS custom properties, so switching between a wedding and a society function re-themes the entire page without shipping a byte of script.
 
 ### Testing
 
-**317 tests, 50 suites, no mocked models.** Run `npm test`.
+**324 tests, 51 suites, no mocked models.** Run `npm test`.
 
 Nothing here mocks an API. The engines are deterministic, so they are tested directly; the provider layer is tested through `buildEndpoint`, which is a pure function; the route handlers are tested by calling them with a `Request`, because App Router handlers are plain functions.
 
@@ -226,7 +228,8 @@ Built to WCAG 2.2 AA, with the decisions that matter stated rather than claimed:
 - **No colour-only encoding, anywhere.** Every verdict, severity and task status carries a colour, *a word* and a glyph. A budget table encoded only in red and green is unreadable to roughly one man in twelve, unreadable in a printout, and unreadable to a screen reader — and the information being encoded is "you cannot afford this".
 - **The festive palette is decoration and is kept that way.** The occasion themes, the gradients and the colour ramp on the budget bar carry no information: the bar is `aria-hidden` and the table beside it holds the same numbers with headers, exact figures and verdicts. Encoding ten categories in colour alone and calling it accessible because the swatches have labels would be the wrong trade, so the swatches are decorative and the table is the source.
 - **Expandables are native `<details>`.** Every vendor checklist and every disclosure opens with scripting disabled, is keyboard accessible without any work, and is announced correctly — and the print stylesheet forces all of them open, so a printed plan is the whole plan.
-- **Motion is opt-in.** The staggered entrance animations are the kind of thing that makes a page feel alive and makes some people feel ill, so `prefers-reduced-motion` switches them off entirely rather than merely shortening them.
+- **Motion is opt-in.** The drifting mesh, the turning rangoli, the floating diyas and the scroll reveals are the kind of thing that makes a page feel alive and makes some people feel ill, so `prefers-reduced-motion` switches all of them off entirely rather than merely shortening them. The scroll reveals are additionally wrapped in `@supports (animation-timeline: view())`, so a browser without view timelines simply shows the content — rather than being left at `opacity: 0` by an animation that can never run, which is the standard way this technique hides an entire page.
+- **Decorative opacity is a theme token, not a fixed value.** The same warm gold that is a faint wash over cream becomes a pattern competing with the headline over deep plum. `--decor-rangoli` and friends are about a third as strong in dark mode, which was found by rendering the page rather than by reasoning about it.
 - **Real tables.** `<caption>`, `<thead>`, `scope="col"` and `scope="row"`, and a `<tfoot>` carrying the total. A screen reader on a grid of divs gets a list of unrelated numbers; on this it gets *"Catering, allocated six lakh seventy-five thousand, verdict realistic"*. On a phone the same data renders as cards instead, because a five-column financial table at 360px is either unreadable or requires horizontal scrolling — and only one of the two is in the accessibility tree at a time.
 - **Every form hint is wired with `aria-describedby`.** Without it a screen-reader user hears the label and the input and never the explanation of what the field means — which, for "city tier", is the entire content of the field.
 - **The streaming narrative announces once, politely.** A live region updating on every token makes a screen reader unusable, so the announcement fires on state change and reports the verification tally.
@@ -261,7 +264,7 @@ The challenge asks for a planning assistant covering *budgets, timelines, vendor
 ```bash
 npm ci
 npm run dev             # http://localhost:3000 — fully functional with no API key
-npm run check           # typecheck, lint, 317 tests, all three guards, production build
+npm run check           # typecheck, lint, 324 tests, all three guards, production build
 
 npm run verify:no-key   # computes and narrates five plans with an empty environment,
                         # failing if any does not balance or does not verify

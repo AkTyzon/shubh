@@ -18,6 +18,17 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  Arch,
+  BudgetMock,
+  ChecklistMock,
+  Confetti,
+  Diya,
+  Rangoli,
+  TimelineMock,
+  Toran,
+  VerifiedMock,
+} from "@/components/Decor";
 import { BudgetSection } from "@/components/BudgetSection";
 import { FeasibilityPanel } from "@/components/FeasibilityPanel";
 import { Narrative } from "@/components/Narrative";
@@ -26,10 +37,14 @@ import { PlanForm } from "@/components/PlanForm";
 import { Timeline } from "@/components/Timeline";
 import { VendorChecklists } from "@/components/VendorChecklists";
 import { formatExact, formatMoney } from "@/lib/budget";
+import { COST_CATEGORIES } from "@/lib/knowledge/costs";
+import { IDEAS } from "@/lib/knowledge/ideas";
+import { TASK_TEMPLATES } from "@/lib/knowledge/timelines";
+import { VENDOR_CHECKLISTS } from "@/lib/knowledge/vendors";
 import { resolveProvider } from "@/lib/llm";
 import { buildPlan, parsePlanInput, PlanInputError } from "@/lib/plan";
 import { planToQuery, readPlanParams, type RawPlanParams } from "@/lib/share";
-import { occasionFor, OCCASION_LIST } from "@/lib/theme";
+import { occasionFor } from "@/lib/theme";
 import { addDays, displayDate } from "@/lib/timeline";
 import type { Plan } from "@/lib/types";
 
@@ -85,8 +100,10 @@ export default async function Home({
         </div>
       </header>
 
-      <main id="main" className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
-        {!plan && <Hero />}
+      <main id="main">
+        {!plan && <Landing />}
+
+        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
 
         {inputError && (
           <p
@@ -98,11 +115,11 @@ export default async function Home({
         )}
 
         <div className="grid gap-10">
-          <PlanForm current={plan?.input} today={today} />
-
-          {!plan && <Examples today={today} />}
-
-          {plan && (
+          {plan ? (
+            /* The plan leads. Somebody who has just pressed "Plan it" should see
+               their budget, not scroll past the form they only just filled in —
+               so the form moves below the result and collapses into a
+               disclosure. Native <details>, so it still opens with no JS. */
             <>
               <div className="rise rise-1">
                 <PlanHeader plan={plan} />
@@ -121,8 +138,37 @@ export default async function Home({
               </div>
               <Narrative input={plan.input} providerLabel={provider?.label ?? null} />
               <Methodology />
+
+              <details id="plan" className="disclosure card scroll-mt-24 overflow-hidden">
+                <summary className="p-5">
+                  <span>
+                    <span className="block text-lg font-semibold">Change something</span>
+                    <span className="block text-sm text-[var(--text-soft)]">
+                      Move the date, adjust the budget, or try a different headcount.
+                    </span>
+                  </span>
+                </summary>
+                <div className="border-t p-4 sm:p-5">
+                  <PlanForm current={plan.input} today={today} />
+                </div>
+              </details>
+            </>
+          ) : (
+            <>
+              <section id="plan" aria-label="Plan your celebration" className="scroll-mt-24">
+                <div className="mb-6 max-w-2xl">
+                  <p className="text-xs font-bold tracking-[0.22em] uppercase text-[var(--accent)]">
+                    Start here
+                  </p>
+                  <h2 className="section-title mt-3 font-semibold">Tell us about the day</h2>
+                </div>
+                <PlanForm today={today} />
+              </section>
+
+              <Examples today={today} />
             </>
           )}
+          </div>
         </div>
       </main>
 
@@ -150,77 +196,289 @@ export default async function Home({
   );
 }
 
-/* ----------------------------------------------------------------- intro */
+/* --------------------------------------------------------------- landing */
 
-function Hero() {
+/**
+ * The landing experience.
+ *
+ * Full-bleed bands rather than one long column, because a page that never
+ * touches the edge of the window reads as a document. Each band has its own
+ * background and rhythm: hero, a dark stats strip, the four things the product
+ * does, and how it works.
+ *
+ * Every decorative piece here is `aria-hidden` or `alt=""`, and the reveal
+ * animations are pure CSS view timelines, so the whole section costs no
+ * JavaScript and degrades to plain visible content where unsupported.
+ */
+function Landing() {
   return (
-    <div className="mb-10 grid gap-7">
-      <div className="hero rise p-6 sm:p-10">
-        <span className="garland" aria-hidden="true" />
-        <p className="mb-3 text-xs font-bold tracking-[0.18em] uppercase text-[var(--accent)]">
+    <>
+      <HeroBand />
+      <StatsBand />
+      <FeatureBand />
+      <StepsBand />
+    </>
+  );
+}
+
+function HeroBand() {
+  return (
+    <section className="relative overflow-hidden">
+      <div className="mesh" aria-hidden="true" />
+      <Toran className="absolute inset-x-0 top-0 z-10 opacity-70" />
+
+      {/* The rangoli sits behind the type, bleeding off the right edge. */}
+      <Rangoli
+        className="absolute -top-24 -right-40 w-[34rem] sm:-right-24 lg:right-4 lg:w-[40rem]"
+        style={{ opacity: "var(--decor-rangoli)" }}
+      />
+
+      {/* The headline is capped at max-w-4xl inside a max-w-6xl column, so the
+          right-hand strip is the only space a floating ornament can occupy
+          without ever landing on top of the type. An earlier pair sat on the
+          left and covered the first word. */}
+      <Diya className="absolute top-[30%] right-[5%] hidden w-14 text-[var(--accent)] opacity-85 xl:block float" />
+      <Diya className="absolute right-[13%] bottom-28 hidden w-9 text-[var(--accent)] opacity-65 xl:block float-slow float-delay" />
+      <Confetti
+        className="absolute inset-x-0 top-24 h-20 text-[var(--accent)]"
+        style={{ opacity: "var(--decor-confetti)" }}
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 pt-28 pb-20 sm:px-6 sm:pt-36 sm:pb-28">
+        <p className="mb-5 text-xs font-bold tracking-[0.22em] uppercase text-[var(--accent)]">
           Weddings · Birthdays · Griha Pravesh · Society functions
         </p>
-        <h1 className="max-w-3xl text-3xl leading-tight font-semibold sm:text-5xl">
-          Plan the celebration.{" "}
-          <span className="text-[var(--accent)]">Not the spreadsheet.</span>
+
+        <h1 className="headline max-w-4xl font-semibold">
+          Plan the celebration.
+          <br />
+          <span className="sweep">Not the spreadsheet.</span>
         </h1>
-        <p className="mt-4 max-w-2xl text-base text-[var(--text-soft)] sm:text-lg">
+
+        <p className="subhead mt-7 max-w-2xl text-[var(--text-soft)]">
           Tell Shubh the date, the headcount, the city and what you can spend. Get back a budget
           that balances to the rupee, a schedule built backwards from the date, the questions to
           ask every vendor, and ideas that fit the money you actually have.
         </p>
-        <div className="mt-6 flex flex-wrap gap-2.5">
-          {OCCASION_LIST.map((occasion) => (
-            <span
-              key={occasion.id}
-              data-occasion={occasion.id}
-              className="pill border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1 text-sm text-[var(--accent)]"
-            >
-              <span aria-hidden="true">{occasion.glyph}</span>
-              {occasion.label}
-            </span>
-          ))}
-        </div>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Claim glyph="🧮" title="Every rupee is computed">
-          The AI never produces a number. Allocation is arithmetic over published cost
-          benchmarks, and the code refuses to return a budget whose parts do not sum to the whole.
-        </Claim>
-        <Claim glyph="🔍" title="Every AI figure is checked">
-          The explanation is generated, then each rupee amount and date in it is matched against
-          your computed plan. Anything invented is struck through and labelled — you see the
-          tally, you are not asked to trust it.
-        </Claim>
-        <Claim glyph="🤝" title="It tells you the truth">
-          ₹3 lakh for 400 guests in Mumbai is not a plan that needs encouragement. You get the
-          per-head arithmetic, the gap, and the guest count your money actually covers.
-        </Claim>
+        <div className="mt-9 flex flex-wrap items-center gap-3">
+          <a href="#plan" className="btn-primary text-base">
+            Plan my celebration →
+          </a>
+          <a href="#how" className="btn-quiet px-5 py-3 text-base">
+            See how it works
+          </a>
+        </div>
+
+        <p className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-[var(--text-soft)]">
+          <span>
+            <span aria-hidden="true" className="text-[var(--good)]">
+              ✓
+            </span>{" "}
+            No sign-in
+          </span>
+          <span>
+            <span aria-hidden="true" className="text-[var(--good)]">
+              ✓
+            </span>{" "}
+            Works with no AI key
+          </span>
+          <span>
+            <span aria-hidden="true" className="text-[var(--good)]">
+              ✓
+            </span>{" "}
+            Free, and nothing is stored
+          </span>
+        </p>
       </div>
-    </div>
+    </section>
   );
 }
 
-function Claim({
-  glyph,
-  title,
-  children,
-}: {
-  glyph: string;
-  title: string;
-  children: React.ReactNode;
-}) {
+/**
+ * The stats strip.
+ *
+ * Real counts, pulled from the knowledge modules at render rather than typed
+ * into the markup — so they cannot drift from what the product actually
+ * contains, which is the usual fate of a number on a landing page.
+ */
+function StatsBand() {
+  const categories = Object.values(COST_CATEGORIES).reduce((sum, list) => sum + list.length, 0);
+  const tasks = Object.values(TASK_TEMPLATES).reduce((sum, list) => sum + list.length, 0);
+  const checklists = Object.values(VENDOR_CHECKLISTS).reduce((sum, list) => sum + list.length, 0);
+  const ideas = Object.values(IDEAS).reduce((sum, list) => sum + list.length, 0);
+
+  const stats = [
+    { value: categories, label: "budget categories", detail: "across four occasions" },
+    { value: tasks, label: "scheduled tasks", detail: "each with a real lead time" },
+    { value: checklists, label: "vendor checklists", detail: "one per budget line" },
+    { value: ideas, label: "curated ideas", detail: "tagged by budget band" },
+  ];
+
   return (
-    <div className="card p-5">
-      <h2 className="flex items-center gap-2 text-base font-semibold">
-        <span aria-hidden="true" className="text-xl">
-          {glyph}
-        </span>
-        {title}
-      </h2>
-      <p className="mt-1.5 text-sm text-[var(--text-soft)]">{children}</p>
-    </div>
+    <section className="band relative overflow-hidden py-12 sm:py-16">
+      <div
+        className="jaali absolute inset-0"
+        style={{ opacity: "var(--decor-jaali-band)" }}
+        aria-hidden="true"
+      />
+      <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-8 px-4 sm:px-6 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="reveal">
+            <p className="band-value display nums text-4xl font-semibold sm:text-5xl">
+              {stat.value}
+            </p>
+            <p className="mt-1 font-semibold">{stat.label}</p>
+            <p className="band-label mt-0.5 text-sm">{stat.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The four things the product does.
+ *
+ * Alternating rows of text and a preview of the real interface. The previews are
+ * built from the product's own primitives rather than screenshots, so they
+ * cannot go stale, they re-theme with the page, and they stay sharp at any zoom.
+ */
+function FeatureBand() {
+  const features = [
+    {
+      eyebrow: "Budgets",
+      title: "A budget that balances to the rupee",
+      body:
+        "Your total is split across the categories that occasion actually has, with anything " +
+        "you refuse to compromise on funded first. Every line is scored against what it really " +
+        "costs for your headcount in your city tier. Allocations plus contingency equal your " +
+        "total exactly — the code refuses to return a budget that does not.",
+      art: <BudgetMock />,
+    },
+    {
+      eyebrow: "Timelines",
+      title: "A schedule built backwards from the date",
+      body:
+        "Every task carries the lead time it genuinely needs and the tasks it depends on. Dates " +
+        "run backwards from your event, and when a lead time no longer fits, you are told how " +
+        "many days late it already is — instead of it being quietly moved to tomorrow to keep " +
+        "the list looking tidy.",
+      art: <TimelineMock />,
+    },
+    {
+      eyebrow: "Vendor checklists",
+      title: "The questions to ask before you pay anyone",
+      body:
+        "One checklist per budget line: what to ask, what to get in writing, the red flags, and " +
+        "what a normal payment schedule looks like. This is where money actually goes missing, " +
+        "and it goes to the same handful of omissions every time.",
+      art: <ChecklistMock />,
+    },
+    {
+      eyebrow: "Personalised ideas",
+      title: "Suggestions that fit the money you have",
+      body:
+        "The AI writes the ideas and the explanation — and then every rupee figure and date it " +
+        "states is checked against your computed plan. Anything invented is struck through where " +
+        "it appears, and you are shown the tally rather than asked to trust it.",
+      art: <VerifiedMock />,
+    },
+  ];
+
+  return (
+    <section
+      id="features"
+      aria-labelledby="features-heading"
+      className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28"
+    >
+      <div className="max-w-2xl">
+        <p className="text-xs font-bold tracking-[0.22em] uppercase text-[var(--accent)]">
+          What you get
+        </p>
+        <h2 id="features-heading" className="section-title mt-3 font-semibold">
+          Four things, and all of them computed
+        </h2>
+      </div>
+
+      <div className="mt-14 grid gap-16 sm:gap-24">
+        {features.map((feature, index) => (
+          <div
+            key={feature.eyebrow}
+            className="reveal grid items-center gap-8 lg:grid-cols-2 lg:gap-16"
+          >
+            <div className={index % 2 === 1 ? "lg:order-2" : undefined}>
+              <p className="text-xs font-bold tracking-[0.18em] uppercase text-[var(--accent)]">
+                {feature.eyebrow}
+              </p>
+              <h3 className="mt-2.5 text-2xl font-semibold sm:text-3xl">{feature.title}</h3>
+              <p className="mt-3.5 text-[var(--text-soft)]">{feature.body}</p>
+            </div>
+            <div className={`halo ${index % 2 === 1 ? "lg:order-1" : ""}`}>{feature.art}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StepsBand() {
+  const steps = [
+    {
+      title: "Tell it the basics",
+      body: "The occasion, the date, how many people, where, and what you can spend. Five fields.",
+    },
+    {
+      title: "Get the computed plan",
+      body:
+        "Budget, schedule, vendor checklists and an honest answer about whether it is possible " +
+        "at all. No AI involved, and no key needed.",
+    },
+    {
+      title: "Ask for ideas, verified",
+      body:
+        "The AI explains the plan and suggests things that fit it. Every figure it states is " +
+        "checked against the plan before you see it.",
+    },
+  ];
+
+  return (
+    <section id="how" aria-labelledby="how-heading" className="bleed relative overflow-hidden">
+      <div
+        className="jaali absolute inset-0"
+        style={{ opacity: "var(--decor-jaali)" }}
+        aria-hidden="true"
+      />
+      <Arch
+        className="absolute -top-6 left-1/2 w-72 -translate-x-1/2 text-[var(--accent)]"
+        style={{ opacity: "var(--decor-arch)" }}
+      />
+
+      <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-bold tracking-[0.22em] uppercase text-[var(--accent)]">
+            How it works
+          </p>
+          <h2 id="how-heading" className="section-title mt-3 font-semibold">
+            Three steps, about a minute
+          </h2>
+        </div>
+
+        <ol className="steps mt-14 grid gap-8 lg:grid-cols-3">
+          {steps.map((step, index) => (
+            <li key={step.title} className="card reveal flex gap-4 p-5">
+              <span className="step-number" aria-hidden="true">
+                {index + 1}
+              </span>
+              <div>
+                <h3 className="text-lg font-semibold">{step.title}</h3>
+                <p className="mt-1.5 text-sm text-[var(--text-soft)]">{step.body}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
   );
 }
 
