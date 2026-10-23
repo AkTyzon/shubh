@@ -11,9 +11,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run verify:csp && npm run verify:no-key && npm run build",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run verify:csp && npm run verify:html && npm run verify:no-key && npm run build",
     "verify:no-key": "tsx scripts/verify-without-key.ts",
-    "verify:csp": "tsx scripts/check-csp.ts"
+    "verify:csp": "tsx scripts/check-csp.ts",
+    "verify:html": "tsx scripts/check-no-raw-html.ts"
   },
   "dependencies": {
     "next": "16.4.2",

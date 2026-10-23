@@ -131,18 +131,13 @@ jobs:
           fi
           echo "Client bundle is clean."
 
-      # The CSP permits 'unsafe-inline' for Next's bootstrap script, so the
-      # mitigation that matters is that no HTML is ever rendered from user or
-      # model input. This keeps that true.
-      - name: No raw HTML injection points
-        run: |
-          set -euo pipefail
-          if grep -rn "dangerouslySetInnerHTML\|innerHTML\s*=" \
-               --include="*.ts" --include="*.tsx" app lib components ; then
-            echo "::error::Raw HTML is being injected. Model output must never be rendered as HTML."
-            exit 1
-          fi
-          echo "No raw HTML injection points."
+      # Asserts the behaviour, not the text of the files. The previous version
+      # was a grep over raw source and failed on the comment in
+      # components/MarkdownView.tsx explaining why innerHTML is *not* used —
+      # the same mistake the CSP guard made. Writing down why a dangerous API
+      # is avoided has to stay free, so the script strips comments first.
+      - name: No raw HTML or code injection points
+        run: npx tsx scripts/check-no-raw-html.ts
 
       # Asserts the header value the config actually produces, not the text of
       # the file. The previous version grepped next.config.ts for
