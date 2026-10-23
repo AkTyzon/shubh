@@ -183,7 +183,9 @@ Streaming degrades in stages: streaming → three retries with jittered backoff 
 - **Fonts are self-hosted** by `next/font` at build time — no runtime request to Google, no third party in the critical render path, and `connect-src 'self'` stays honest.
 - **`output: "standalone"`** keeps the deployed function small and the cold start short on a free tier.
 - **Split timeouts** on model calls: one budget for the first byte, a separate idle budget between chunks. A single wall-clock deadline was the original design and it was a bug — a local 8B model producing a long structured answer streams healthily for minutes, and a 60-second ceiling aborted it mid-sentence.
+- **The markdown parser is not in the first load.** `react-markdown` plus `remark-gfm` is 42 KB gzipped of micromark, and it is dead weight for every visitor who reads their plan without asking for an explanation. It is a separate chunk, loaded on demand and warmed the instant the button is pressed so it arrives alongside the first tokens. First-load JavaScript dropped from 234 KB to 190 KB gzipped — and none of it is needed to read the plan at all.
 - **Links to example plans use `prefetch={false}`.** Six dynamic pages are not worth prefetching on a mobile connection just because the cards are on screen.
+- **The whole visual redesign costs nothing to download.** Gradients, the garland, the budget bar and the timeline spine are all CSS — no images, no icon font, no chart library. Occasion theming is one `data-occasion` attribute resolving CSS custom properties, so switching occasions ships no JavaScript at all.
 
 ### Testing
 

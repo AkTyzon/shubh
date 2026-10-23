@@ -16,14 +16,31 @@
  * buffering everything and showing nothing for ten seconds, reads as broken.
  */
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Markdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { GEMINI_KEY_HEADER } from "@/lib/byo-key";
 import type { PlanInput } from "@/lib/types";
 import { splitStreamPayload, type VerificationEnvelope } from "@/lib/wire";
 
 type Phase = "idle" | "streaming" | "done" | "error";
+
+/**
+ * The markdown renderer, in a chunk of its own.
+ *
+ * `react-markdown` plus `remark-gfm` is roughly 90 KB gzipped of micromark, and
+ * it is dead weight for every visitor who reads their plan without asking for an
+ * explanation. `ssr: false` because this component only ever renders text that
+ * arrived over the network after a click, so there is nothing to server-render.
+ */
+const MarkdownView = dynamic(() => import("./MarkdownView"), {
+  ssr: false,
+  loading: () => <p className="text-[var(--text-soft)]">Rendering…</p>,
+});
+
+/** Start fetching the markdown chunk without waiting for it. */
+function warmMarkdown(): void {
+  void import("./MarkdownView");
+}
 
 export function Narrative({ input, providerLabel }: { input: PlanInput; providerLabel: string | null }) {
   const [text, setText] = useState("");
@@ -44,6 +61,10 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
+
+      // Pulled now rather than on first render of the text, so the chunk is in
+      // flight alongside the first tokens instead of after them.
+      warmMarkdown();
 
       setPhase("streaming");
       setError(null);
@@ -172,7 +193,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
 
             <div className="prose-shubh">
               {annotated ? (
-                <Markdown remarkPlugins={[remarkGfm]}>{annotated}</Markdown>
+                <MarkdownView>{annotated}</MarkdownView>
               ) : (
                 <p className="text-[var(--text-soft)]">Waiting for the first words…</p>
               )}
