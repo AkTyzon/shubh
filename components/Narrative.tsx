@@ -108,10 +108,10 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
   return (
     <section aria-labelledby="narrative-heading" className="grid gap-4">
       <div>
-        <h2 id="narrative-heading" className="font-serif text-2xl font-semibold">
+        <h2 id="narrative-heading" className="text-2xl font-semibold sm:text-3xl">
           The explanation
         </h2>
-        <p className="mt-1 text-[var(--text-soft)]">
+        <p className="mt-1.5 max-w-2xl text-[var(--text-soft)]">
           The plan above is already final. This part explains it and suggests ideas that fit it —
           and every rupee figure and date it states is checked against the computed plan before
           you are shown it.{" "}
@@ -122,11 +122,11 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
       </div>
 
       {phase === "idle" ? (
-        <div className="grid gap-3 rounded-xl border bg-[var(--surface-raised)] p-5">
+        <div className="card grid gap-4 p-5">
           <button
             type="button"
             onClick={() => void run()}
-            className="justify-self-start rounded-lg bg-[var(--accent)] px-5 py-2.5 font-semibold text-[var(--accent-contrast)] hover:opacity-90"
+            className="btn-primary justify-self-start"
           >
             Explain this plan
           </button>
@@ -135,10 +135,10 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
       ) : (
         <div className="grid gap-4">
           <div
-            className={`rounded-xl border p-5 ${
+            className={`avoid-break rounded-[var(--radius)] border p-5 ${
               busy
-                ? "border-dashed border-[var(--color-warn)] bg-[var(--color-warn-soft)]"
-                : "bg-[var(--surface-raised)]"
+                ? "border-dashed border-[var(--warn)] bg-[var(--warn-soft)]"
+                : "card"
             }`}
           >
             {/* Announced once, politely: a live region updating on every token
@@ -156,9 +156,9 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
                 <>
                   <span
                     aria-hidden="true"
-                    className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--color-warn)]"
+                    className="inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--warn)]"
                   />
-                  <span className="text-[var(--color-warn)]">Generating — not yet verified</span>
+                  <span className="text-[var(--warn)]">Generating — not yet verified</span>
                 </>
               ) : envelope ? (
                 <span className="text-[var(--text-soft)]">
@@ -166,7 +166,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
                   verified against the computed plan
                 </span>
               ) : (
-                <span className="text-[var(--color-warn)]">Unverified — the check did not run</span>
+                <span className="text-[var(--warn)]">Unverified — the check did not run</span>
               )}
             </p>
 
@@ -182,7 +182,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
           {error && (
             <p
               role="alert"
-              className="rounded-lg border border-[var(--color-bad)] bg-[var(--color-bad-soft)] p-3 text-sm"
+              className="rounded-[var(--radius)] border border-[var(--bad)] bg-[var(--bad-soft)] p-3.5 text-sm"
             >
               {error}
             </p>
@@ -191,7 +191,7 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
           {envelope && <VerificationPanel envelope={envelope} />}
 
           <form
-            className="no-print grid gap-2 rounded-xl border bg-[var(--surface-raised)] p-4"
+            className="no-print card grid gap-2 p-4"
             onSubmit={(event) => {
               event.preventDefault();
               if (question.trim() && !busy) void run(question);
@@ -213,12 +213,12 @@ export function Narrative({ input, providerLabel }: { input: PlanInput; provider
                 maxLength={600}
                 aria-describedby="follow-up-hint"
                 placeholder="Can I cut the decor and add to catering?"
-                className="min-w-0 flex-1 rounded-lg border bg-[var(--surface)] px-3 py-2"
+                className="field min-w-0 flex-1"
               />
               <button
                 type="submit"
                 disabled={busy || !question.trim()}
-                className="rounded-lg bg-[var(--accent)] px-4 py-2 font-semibold text-[var(--accent-contrast)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-primary px-4 py-2"
               >
                 {busy ? "Working…" : "Ask"}
               </button>
@@ -249,15 +249,15 @@ function VerificationPanel({ envelope }: { envelope: VerificationEnvelope }) {
   return (
     <section
       aria-labelledby="verification-heading"
-      className={`rounded-xl border p-4 ${
+      className={`avoid-break rounded-[var(--radius)] border p-4 sm:p-5 ${
         nothingToCheck
           ? "bg-[var(--surface-sunken)]"
           : clean
-            ? "border-[var(--color-good)] bg-[var(--color-good-soft)]"
-            : "border-[var(--color-bad)] bg-[var(--color-bad-soft)]"
+            ? "border-[var(--good)] bg-[var(--good-soft)]"
+            : "border-[var(--bad)] bg-[var(--bad-soft)]"
       }`}
     >
-      <h3 id="verification-heading" className="font-semibold">
+      <h3 id="verification-heading" className="text-lg font-semibold">
         <span aria-hidden="true">{nothingToCheck ? "— " : clean ? "✓ " : "⚠ "}</span>
         {nothingToCheck
           ? "No figures or dates were quoted"
@@ -288,10 +288,10 @@ function VerificationPanel({ envelope }: { envelope: VerificationEnvelope }) {
                 <span
                   className={
                     figure.status === "matched"
-                      ? "text-[var(--color-good)]"
+                      ? "text-[var(--good)]"
                       : figure.status === "rounded"
-                        ? "text-[var(--color-warn)]"
-                        : "text-[var(--color-bad)]"
+                        ? "text-[var(--warn)]"
+                        : "text-[var(--bad)]"
                   }
                 >
                   {figure.status === "matched"
@@ -312,7 +312,7 @@ function VerificationPanel({ envelope }: { envelope: VerificationEnvelope }) {
                 </code>
                 <span
                   className={
-                    date.status === "matched" ? "text-[var(--color-good)]" : "text-[var(--color-bad)]"
+                    date.status === "matched" ? "text-[var(--good)]" : "text-[var(--bad)]"
                   }
                 >
                   {date.status === "matched" ? "in the schedule" : "not in the schedule"}
@@ -348,7 +348,7 @@ function KeyField({
       open={invite}
       className={
         invite
-          ? "no-print rounded-lg border border-[var(--color-cool)] bg-[var(--color-cool-soft)] p-3 text-sm"
+          ? "no-print rounded-lg border border-[var(--cool)] bg-[var(--cool-soft)] p-3 text-sm"
           : "no-print text-sm"
       }
     >
@@ -388,7 +388,7 @@ function KeyField({
           spellCheck={false}
           aria-describedby="byo-key-hint"
           placeholder="AIza… or AQ.…"
-          className="w-full rounded-lg border bg-[var(--surface)] px-3 py-2 font-mono"
+          className="field font-mono"
         />
         <p id="byo-key-hint" className="text-xs text-[var(--text-soft)]">
           Sent as a request header for this one call, used once, and never stored — not in this

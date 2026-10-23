@@ -2,13 +2,13 @@
 
 **Celebration planning where the numbers actually add up.**
 
-Plan an Indian wedding, birthday, griha pravesh or society function. Tell Shubh the date, the headcount, the city tier and what you can spend. It returns a budget that balances to the rupee, a schedule computed backwards from the date with dependencies enforced, and a straight answer about whether the plan is possible at all.
+Plan an Indian wedding, birthday, griha pravesh or society function. Tell Shubh the date, the headcount, the city tier and what you can spend. It returns a budget that balances to the rupee, a schedule computed backwards from the date with dependencies enforced, a vendor checklist for every line of that budget, and a straight answer about whether the plan is possible at all.
 
 The AI explains and suggests. **It never produces a number.** And where it states one anyway, that figure is extracted and checked against the computed plan before you see it — with the result shown to you, not assumed.
 
 - **Live:** https://shubh-green.vercel.app
 - **Repository:** https://github.com/AkTyzon/shubh
-- **Challenge:** Celebration & Event Planner
+- **Challenge:** Celebration & Event Planner — *budgets, timelines, vendor checklists and personalised ideas*, which is exactly what the four sections of a plan are
 - **Runs with zero API keys.** The arithmetic never needed one — and the hosted demo is deliberately deployed without one. See [below](#about-the-hosted-demo).
 
 ---
@@ -22,7 +22,9 @@ Four clicks. The home page carries each of these as a one-click example link, so
 | 1 | **Metro wedding, 300 guests, ₹25 lakh** (nine months out) | Scroll to the bottom of the budget table. `allocated + contingency = total`, printed as arithmetic. Not approximately — exactly, to the rupee. |
 | 2 | **Metro wedding, 400 guests, ₹3 lakh** | It refuses. *"₹3.00 lakh across 400 guests is ₹750 a head. A typical wedding at this size and location runs near ₹30.96 lakh — a gap of about ₹27.96 lakh."* Then: *"Reduce to roughly 80 guests, which this budget does cover."* No model wrote that; it is arithmetic. |
 | 3 | **Wedding in ten days** | The money is fine. The *date* is the problem. Tasks that should have been done months ago are listed as overdue with the shortfall in days, rather than silently rescheduled to tomorrow to keep the list looking tidy. |
-| 4 | On any plan, press **Explain this plan** | Text streams in marked *"Generating — not yet verified"*. When it finishes, a panel reports how many of its figures and dates matched the computed plan. Anything invented is **struck through in the text itself**. |
+| 4 | Scroll to **Before you pay anyone** and open one | The vendor checklist for that budget line: what to ask, what to get in writing, red flags, and what paying normally looks like. Native `<details>`, so it opens with JavaScript off. |
+| 5 | Switch the occasion to **Birthday**, then **Society function** | The whole page re-themes — palette, gradient, glyph — and the categories, tasks and checklists all change with it. A birthday is not a wedding with the numbers scaled down. |
+| 6 | On any plan, press **Explain this plan** | Text streams in marked *"Generating — not yet verified"*. When it finishes, a panel reports how many of its figures and dates matched the computed plan. Anything invented is **struck through in the text itself**. |
 
 ### About the hosted demo
 
@@ -45,23 +47,31 @@ No `.env`, no key, no account. You get the full product, including a written exp
 
 ---
 
-## Why not just ask ChatGPT to plan your wedding?
+## What it actually does
 
-Because you will get a confident, tidy, plausible table whose rows do not add up to your budget — and checking it is exactly the work you were trying to avoid.
+Four things, which are the four the problem statement asks for.
 
-Ask the same model twice and you get two different budgets. Neither tells you that the date you picked leaves 54 days for a venue that needs 180. Neither adds the lines up. And the failure is not a clumsy sentence: it is a confident ₹8,40,000 that someone commits borrowed money against.
+**A budget that balances.** Your total is split across the categories that occasion actually has — a wedding has ten, a griha pravesh has four — then each line is scored against what it costs for your guest count in your city tier. Allocations plus contingency equal your total exactly, and the page shows you that arithmetic rather than asking you to assume it.
 
-A language model is genuinely good at parts of this — what to serve, how to make a tight budget feel generous, what to ask a caterer, which rituals a region expects. It is unreliable at the part people act on with money. So here it does the first and is kept out of the second:
+**A schedule built backwards from the date.** 46 task templates across the four occasions, each with a real lead time and its dependencies declared. Tasks are dated from the event backwards, pulled earlier where a prerequisite would otherwise land too late, and reported as overdue with the shortfall in days when the lead time simply no longer fits.
+
+**Vendor checklists.** 29 of them, one per budget line: what to ask before you commit, what to get in writing, the red flags, and what a normal payment schedule looks like. This is where money is actually lost, and it is lost to the same omissions every time — a per-plate quote with no stated headcount, a venue booking with no overtime rate, a photographer whose delivery date was never agreed. By the time any of those surface, the advance is gone.
+
+**Ideas that fit the money.** Model-generated against the computed plan, and verified. Underneath sits a curated catalogue tagged by budget band, because the useful advice at ₹400 a head is the opposite of the useful advice at ₹2,500 a head.
+
+### Where the AI sits
+
+The split is the design, and it is deliberate:
 
 | | Who decides | Enforced how |
 |---|---|---|
 | Every rupee allocation | **Code** | Allocations plus contingency must equal the total. `lib/budget.ts` throws rather than return a budget that does not balance. |
 | Every date | **Code** | Computed backwards from the event date; dependency ordering enforced; impossibility reported, not absorbed. |
 | Whether the plan is possible | **Code** | Thresholds against market benchmarks and lead times, each finding stating its own arithmetic. |
-| Categories, themes, menus, wording, what to ask a vendor | **The model** | What it is actually good at. |
+| Themes, menus, regional customs, wording, what to suggest | **The model** | What it is genuinely good at. |
 | Any figure the model states regardless | **Checked** | Extracted and matched against the plan's allow-list. Matched, rounded, or invented — and the reader is told which. |
 
----
+A language model is good at texture and bad at arithmetic nobody checks. People commit savings and borrowed money against these numbers, so the arithmetic is code and the texture is the model — and where the model states a figure anyway, it is verified before you see it.
 
 ## The verification gate
 
@@ -92,8 +102,9 @@ The reader sees the tally. An explanation where every figure checks out reads ve
 
 ```
 lib/knowledge/          Hand-written, typed, self-checking data
-  costs.ts              Market ranges by city tier for 4 event types, 25 categories
+  costs.ts              Market ranges by city tier for 4 occasions, 25 categories
   timelines.ts          46 task templates with lead times, dependencies and reasons
+  vendors.ts            29 vendor checklists, one per budget line
   ideas.ts              Curated suggestions, tagged by budget band
 
 lib/                    The engines. No model is reachable from any of these.
@@ -105,9 +116,12 @@ lib/                    The engines. No model is reachable from any of these.
   verify.ts             The gate. Checks model output against the plan.
   prompt.ts             Instructions that keep the model out of the arithmetic.
   llm.ts                Multi-provider streaming over raw REST. No SDK.
+  theme.ts              Per-occasion palette and the budget bar colour ramp.
 
 app/                    Next.js App Router
   page.tsx              Server component. Renders the whole plan without JS.
+components/             Budget bar + table, timeline spine, vendor checklists,
+                        feasibility panel, and the one client island.
   api/plan              The computed plan as JSON.
   api/ideas             Streams the narrative, then appends its verification.
   api/health            What this instance can actually do.
@@ -173,7 +187,7 @@ Streaming degrades in stages: streaming → three retries with jittered backoff 
 
 ### Testing
 
-**291 tests, 45 suites, no mocked models.** Run `npm test`.
+**317 tests, 50 suites, no mocked models.** Run `npm test`.
 
 Nothing here mocks an API. The engines are deterministic, so they are tested directly; the provider layer is tested through `buildEndpoint`, which is a pure function; the route handlers are tested by calling them with a `Request`, because App Router handlers are plain functions.
 
@@ -188,6 +202,8 @@ The suite is mostly **property tests over seeded sweeps**, not a handful of exam
 | A plan survives a round trip through its shareable URL unchanged | 200 plans |
 | The context handed to the model verifies clean against its own plan | 60 plans — so the context cannot set the model up to fail |
 | Date arithmetic round-trips across month, year, leap-day and DST boundaries | 300 offsets |
+| Every budget category of every occasion has a vendor checklist, and no checklist names a price | 25 categories, 29 checklists |
+| The budget bar ramp produces adjacent segments that are actually distinguishable | 4 occasions × 12 category counts |
 
 Seeded, so a failure is reproducible. An invariant that fails once in two hundred runs is exactly the kind this project needs to catch.
 
@@ -205,12 +221,15 @@ A dedicated CI job runs the whole pipeline **with an empty environment** and fai
 Built to WCAG 2.2 AA, with the decisions that matter stated rather than claimed:
 
 - **It works with JavaScript disabled.** Not degraded — the budget, the schedule and the findings are all server-rendered. This is the accessibility feature that subsumes most others.
-- **No colour-only encoding, anywhere.** Every verdict and every severity carries a colour, *a word* and a glyph. A budget table encoded only in red and green is unreadable to roughly one man in twelve, unreadable in a printout, and unreadable to a screen reader — and the information being encoded is "you cannot afford this".
+- **No colour-only encoding, anywhere.** Every verdict, severity and task status carries a colour, *a word* and a glyph. A budget table encoded only in red and green is unreadable to roughly one man in twelve, unreadable in a printout, and unreadable to a screen reader — and the information being encoded is "you cannot afford this".
+- **The festive palette is decoration and is kept that way.** The occasion themes, the gradients and the colour ramp on the budget bar carry no information: the bar is `aria-hidden` and the table beside it holds the same numbers with headers, exact figures and verdicts. Encoding ten categories in colour alone and calling it accessible because the swatches have labels would be the wrong trade, so the swatches are decorative and the table is the source.
+- **Expandables are native `<details>`.** Every vendor checklist and every disclosure opens with scripting disabled, is keyboard accessible without any work, and is announced correctly — and the print stylesheet forces all of them open, so a printed plan is the whole plan.
+- **Motion is opt-in.** The staggered entrance animations are the kind of thing that makes a page feel alive and makes some people feel ill, so `prefers-reduced-motion` switches them off entirely rather than merely shortening them.
 - **Real tables.** `<caption>`, `<thead>`, `scope="col"` and `scope="row"`, and a `<tfoot>` carrying the total. A screen reader on a grid of divs gets a list of unrelated numbers; on this it gets *"Catering, allocated six lakh seventy-five thousand, verdict realistic"*. On a phone the same data renders as cards instead, because a five-column financial table at 360px is either unreadable or requires horizontal scrolling — and only one of the two is in the accessibility tree at a time.
 - **Every form hint is wired with `aria-describedby`.** Without it a screen-reader user hears the label and the input and never the explanation of what the field means — which, for "city tier", is the entire content of the field.
 - **The streaming narrative announces once, politely.** A live region updating on every token makes a screen reader unusable, so the announcement fires on state change and reports the verification tally.
 - **A skip link** is the first focusable element. **A single visible focus style** is applied to everything via `:focus-visible`. **Zoom is not capped** — `maximum-scale=5`, because capping it is a common and avoidable failure on a page full of numbers people want to magnify.
-- **`prefers-reduced-motion` and `prefers-color-scheme`** are both honoured. The dark palette re-tunes every verdict colour, because the light-mode greens and reds fall below 4.5:1 on a dark surface and a verdict nobody can read is worse than none.
+- **`prefers-color-scheme` is honoured, properly.** The dark palette re-tunes every verdict colour and every occasion accent, because the light-mode greens, reds and deep accents all fall below 4.5:1 on a dark surface — and a verdict nobody can read is worse than none.
 - **`lang="hi"`** on the Devanagari शुभ, so a screen reader switches voice rather than spelling it with an English phoneme set.
 - **Tabular figures** wherever one number is compared against another. Proportional digits make a column of rupee amounts impossible to scan.
 - **Printing is a real output**, not an afterthought: a budget circulates as a PDF sent to family. Controls drop out, tables and narrative stay, rows do not split across page breaks, and link targets are not expanded — a printed budget covered in URLs is unreadable.
@@ -227,8 +246,9 @@ The challenge asks for a planning assistant covering *budgets, timelines, vendor
 | *(added)* Griha pravesh | The muhurat governs everything, so it earns its own event type |
 | Budgets | Allocation that balances to the rupee, each line scored against a market range for the city tier and guest count |
 | Timelines | Computed backwards from the date, dependency-ordered, with the shortfall named when a lead time no longer fits |
-| Vendor checklists | Every task carries *why* it has its deadline, and the findings say what to get in writing and what a quote must contain |
+| Vendor checklists | **29 checklists, one per budget line** — what to ask before committing, what to get in writing, the red flags, and what a normal payment schedule looks like. Attached to the line they spend, so "what am I asking about" and "what am I paying" are answered together |
 | Personalised ideas | Model-generated against the computed plan — and verified — with a curated, budget-band-aware catalogue underneath for when no model is configured |
+| *(not asked for, but it matters)* | Each occasion gets its own palette, gradient and glyph, applied in CSS from one `data-occasion` attribute. A child's birthday and a society Diwali programme should not look like the same grey dashboard |
 
 **India-first, deeply.** Costs vary more by city tier than by anything else here — a per-plate rate in Mumbai is three to four times the same menu in a tier-3 town — so `CityTier` is a first-class dimension rather than a multiplier bolted on. Money is formatted in lakh and crore with `en-IN` 2-2-3 grouping, because ₹1,200,000 instead of ₹12,00,000 is misread at a glance by exactly this audience. The wedding model knows haldi, mehendi and sangeet; griha pravesh is built around the muhurat; the community event type assumes volunteers and collected contributions rather than a client with a budget.
 
@@ -239,7 +259,7 @@ The challenge asks for a planning assistant covering *budgets, timelines, vendor
 ```bash
 npm ci
 npm run dev             # http://localhost:3000 — fully functional with no API key
-npm run check           # typecheck, lint, 291 tests, both guards, production build
+npm run check           # typecheck, lint, 317 tests, both guards, production build
 
 npm run verify:no-key   # computes and narrates five plans with an empty environment,
                         # failing if any does not balance or does not verify

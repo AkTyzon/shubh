@@ -2,7 +2,7 @@
   "name": "shubh",
   "version": "1.0.0",
   "private": true,
-  "description": "Plan an Indian celebration on a budget that actually adds up and a timeline that is actually possible",
+  "description": "Plan an Indian celebration with a budget that balances to the rupee, a schedule computed backwards from the date, a vendor checklist for every budget line, and an AI explanation whose every figure is verified against the plan",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",

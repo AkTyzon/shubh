@@ -1,87 +1,172 @@
 @import "tailwindcss";
 
 /**
- * Design tokens.
+ * Shubh's visual system.
  *
- * The palette is warm — marigold, turmeric, deep maroon — because the subject is
- * a celebration and a grey analytics dashboard would be the wrong register. It
- * stops short of decoration: this is a tool people make financial decisions
- * with, and the numbers have to be the most legible thing on the page.
+ * The subject is a celebration, so the page is allowed to feel like one. What it
+ * is not allowed to do is let decoration carry meaning: every budget verdict and
+ * task status pairs its colour with a word and a glyph, so the festive palette is
+ * enjoyable rather than load-bearing, and the page still works in greyscale, in a
+ * printout, and read aloud.
  *
- * Every text/background pairing used for content meets WCAG 2.2 AA (4.5:1 for
- * body text, 3:1 for large text and UI boundaries). The verdict colours below
- * are never the only signal — each verdict also carries a word and a glyph, so
- * the table is readable with no colour perception at all.
+ * Three layers, in order:
+ *
+ * 1. **Surfaces and type** — warm near-white by day, deep plum by night.
+ * 2. **Occasion themes** — each event type sets `data-occasion` on a wrapper and
+ *    gets its own accent, gradient and motif. Resolved server-side, no JS.
+ * 3. **Semantic colours** — verdicts and statuses, tuned separately per surface
+ *    because the light-mode greens and reds fall below 4.5:1 on a dark
+ *    background, and a verdict nobody can read is worse than none.
  */
-@theme {
-  --color-cream: #fffaf2;
-  --color-cream-100: #fdf3e5;
-  --color-cream-200: #f6e7d2;
-  --color-ink: #231a14;
-  --color-ink-soft: #5c4a3d;
-  --color-ink-faint: #8a7a6c;
 
-  --color-maroon: #8a1c33;
-  --color-maroon-dark: #6d1427;
-  --color-marigold: #c25e00;
-  --color-marigold-soft: #fbe9d4;
-  --color-turmeric: #8a6500;
-
-  --color-good: #1f6b3a;
-  --color-good-soft: #e3f3e8;
-  --color-warn: #8a5200;
-  --color-warn-soft: #fdeed6;
-  --color-bad: #a01c1c;
-  --color-bad-soft: #fbe4e4;
-  --color-cool: #1b5a7a;
-  --color-cool-soft: #e2f0f7;
-
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
-}
+/* ---------------------------------------------------------------- 1. base */
 
 :root {
-  --surface: var(--color-cream);
+  --surface: #fffcf7;
   --surface-raised: #ffffff;
-  --surface-sunken: var(--color-cream-100);
-  --border: #e8d9c3;
-  --border-strong: #cdb99c;
-  --text: var(--color-ink);
-  --text-soft: var(--color-ink-soft);
-  --accent: var(--color-maroon);
+  --surface-sunken: #fdf5ea;
+  --surface-inset: #f9ecda;
+  --border: #ecdcc6;
+  --border-strong: #d4bb9c;
+
+  --text: #221824;
+  --text-soft: #5d4f5c;
+  --text-faint: #80707e;
+
+  /* Overridden per occasion; these are the neutral fallbacks. */
+  --accent: #8a1c47;
+  --accent-soft: #fdeaf1;
   --accent-contrast: #ffffff;
+  --glow-a: 335;
+  --glow-b: 32;
+
+  --contingency-fill: #a8927a;
+
+  --good: #146b36;
+  --good-soft: #e2f4e8;
+  --warn: #8a4f00;
+  --warn-soft: #fdeed5;
+  --bad: #a3171c;
+  --bad-soft: #fce4e4;
+  --cool: #15587a;
+  --cool-soft: #e2f0f8;
+
   --focus: #0b4f9c;
+
+  --radius: 0.875rem;
+  --shadow-soft: 0 1px 2px rgb(34 24 36 / 0.05), 0 8px 24px -12px rgb(34 24 36 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(34 24 36 / 0.06), 0 18px 40px -20px rgb(34 24 36 / 0.22);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface: #17120e;
-    --surface-raised: #211a15;
-    --surface-sunken: #120e0b;
-    --border: #3a2e25;
-    --border-strong: #574538;
-    --text: #f6ecdf;
-    --text-soft: #c9b7a4;
-    --accent: #ffb088;
-    --accent-contrast: #2a1208;
+    --surface: #140f1c;
+    --surface-raised: #1e1729;
+    --surface-sunken: #0f0b16;
+    --surface-inset: #251c33;
+    --border: #352a47;
+    --border-strong: #51416a;
+
+    --text: #f7edf5;
+    --text-soft: #c2b2c6;
+    --text-faint: #9c8aa2;
+
+    --accent: #ffa0c2;
+    --accent-soft: #331423;
+    --accent-contrast: #2b0a17;
+
+    --contingency-fill: #6b5c7a;
+
+    --good: #6bdf95;
+    --good-soft: #102e1d;
+    --warn: #f6bf65;
+    --warn-soft: #33250f;
+    --bad: #ff9d9d;
+    --bad-soft: #351619;
+    --cool: #7ec8ef;
+    --cool-soft: #112935;
+
     --focus: #8ec5ff;
 
-    /* Re-tuned for a dark surface: the light-mode verdict colours fall below
-       4.5:1 against it, and a verdict nobody can read is worse than none. */
-    --color-good: #6ddc96;
-    --color-good-soft: #15301f;
-    --color-warn: #f2bc62;
-    --color-warn-soft: #332410;
-    --color-bad: #ff9b9b;
-    --color-bad-soft: #351717;
-    --color-cool: #7cc7ec;
-    --color-cool-soft: #122a36;
-    --color-marigold: #ffb570;
-    --color-marigold-soft: #33210f;
-    --color-maroon: #ff9eb0;
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px rgb(0 0 0 / 0.45), 0 18px 40px -20px rgb(0 0 0 / 0.75);
   }
 }
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-ink: var(--text);
+  --color-ink-soft: var(--text-soft);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+}
+
+/* ----------------------------------------------------------- 2. occasions */
+
+/**
+ * Each occasion's accent is given twice: once for the light surface and once for
+ * the dark. The light-mode accents are deep enough to be body text on cream; the
+ * same values are unreadable on the dark surface, so each has a lifted
+ * counterpart. `--glow-a` and `--glow-b` are bare hue numbers, composed into
+ * gradients below.
+ */
+
+[data-occasion="wedding"] {
+  --accent: #a8185c;
+  --accent-soft: #fdeaf2;
+  --accent-contrast: #ffffff;
+  --glow-a: 335;
+  --glow-b: 32;
+}
+[data-occasion="birthday"] {
+  --accent: #6429c7;
+  --accent-soft: #f1ebfd;
+  --accent-contrast: #ffffff;
+  --glow-a: 268;
+  --glow-b: 190;
+}
+[data-occasion="griha-pravesh"] {
+  --accent: #9a3412;
+  --accent-soft: #fdeee3;
+  --accent-contrast: #ffffff;
+  --glow-a: 20;
+  --glow-b: 110;
+}
+[data-occasion="community"] {
+  --accent: #0d6a62;
+  --accent-soft: #e0f5f2;
+  --accent-contrast: #ffffff;
+  --glow-a: 178;
+  --glow-b: 38;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-occasion="wedding"] {
+    --accent: #ff9ec4;
+    --accent-soft: #3a1527;
+    --accent-contrast: #2b0a17;
+  }
+  [data-occasion="birthday"] {
+    --accent: #c9b2ff;
+    --accent-soft: #241a3d;
+    --accent-contrast: #190b33;
+  }
+  [data-occasion="griha-pravesh"] {
+    --accent: #fdb183;
+    --accent-soft: #35200f;
+    --accent-contrast: #2b1206;
+  }
+  [data-occasion="community"] {
+    --accent: #5fe3d2;
+    --accent-soft: #0e2f2c;
+    --accent-contrast: #052420;
+  }
+}
+
+/* -------------------------------------------------------------- 3. global */
 
 * {
   border-color: var(--border);
@@ -90,9 +175,31 @@
 html {
   scroll-behavior: smooth;
   /* Anchored sections land below the sticky header rather than under it. */
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 5.5rem;
+  -webkit-text-size-adjust: 100%;
 }
 
+body {
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* A barely-there warm wash, so the page is never flat white. */
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, hsl(var(--glow-a) 70% 60% / 0.1), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 100% 0%, hsl(var(--glow-b) 80% 60% / 0.07), transparent 70%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/**
+ * Motion is opt-in by preference.
+ *
+ * The entrance animations below are the kind of thing that makes a page feel
+ * alive and makes some people feel ill, so `prefers-reduced-motion` switches
+ * them off entirely rather than merely shortening them.
+ */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -103,31 +210,27 @@ html {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
   }
 }
 
-body {
-  background: var(--surface);
-  color: var(--text);
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-/**
- * A single visible focus style, applied to everything.
- *
- * Two pixels of solid outline plus an offset ring, so it is visible against both
- * the cream and the raised white surfaces. `:focus-visible` rather than `:focus`
- * keeps it off mouse clicks while keeping it for every keyboard user.
- */
+/** One visible focus style, everywhere, keyboard-only. */
 :focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
-/* Tabular figures everywhere a number is compared against another number.
+h1,
+h2,
+h3,
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.015em;
+}
+
+/* Tabular figures wherever one number is compared against another.
    Proportional digits make a column of rupee amounts impossible to scan. */
 .nums {
   font-variant-numeric: tabular-nums;
@@ -143,73 +246,206 @@ body {
   background: var(--accent);
   color: var(--accent-contrast);
   font-weight: 600;
-  border-radius: 0 0 0.5rem 0;
+  border-radius: 0 0 var(--radius) 0;
 }
 .skip-link:focus {
   left: 0;
 }
 
+/* ------------------------------------------------------------- 4. surface */
+
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+}
+
+.card-interactive {
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+.card-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--accent);
+}
+
 /**
- * Print styles.
- *
- * A plan gets printed, or saved as a PDF and sent to family — that is how a
- * budget actually circulates. So printing is a real output, not an afterthought:
- * controls and the form drop out, the narrative and tables stay, and link targets
- * are not expanded because a printed budget covered in URLs is unreadable.
+ * The hero wash: two soft radial gradients in the occasion's hues over the warm
+ * surface. No image, so nothing to download and nothing to go wrong on a slow
+ * connection.
  */
-@media print {
-  :root {
-    --surface: #ffffff;
-    --surface-raised: #ffffff;
-    --surface-sunken: #ffffff;
-    --text: #000000;
-    --text-soft: #333333;
-    --border: #999999;
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: calc(var(--radius) * 1.6);
+  background:
+    radial-gradient(ellipse 70% 120% at 12% 0%, hsl(var(--glow-a) 72% 56% / 0.22), transparent 62%),
+    radial-gradient(ellipse 70% 120% at 92% 10%, hsl(var(--glow-b) 85% 56% / 0.2), transparent 60%),
+    var(--surface-raised);
+  border: 1px solid var(--border);
+}
+
+/**
+ * A garland strip, drawn in CSS.
+ *
+ * Repeating radial gradients make a row of alternating marigold dots along the
+ * top edge of the hero. Purely decorative, so it sits behind the content and is
+ * announced to nobody.
+ */
+.garland {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 10px;
+  background-image:
+    radial-gradient(circle at 6px 3px, hsl(var(--glow-b) 85% 52%) 0 3.5px, transparent 4px),
+    radial-gradient(circle at 18px 4px, hsl(var(--glow-a) 70% 52%) 0 3px, transparent 3.5px);
+  background-size: 24px 10px;
+  background-repeat: repeat-x;
+  opacity: 0.85;
+}
+
+/* ------------------------------------------------------------ 5. entrance */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  .no-print {
-    display: none !important;
-  }
-  body {
-    background: #ffffff;
-    font-size: 11pt;
-  }
-  /* Keep a budget line or a task from splitting across a page break. */
-  tr,
-  li,
-  .avoid-break {
-    break-inside: avoid;
-  }
-  a[href]::after {
-    content: "";
-  }
-  h2,
-  h3 {
-    break-after: avoid;
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
+
+@keyframes grow-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.rise {
+  animation: rise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Staggered, so a plan assembles itself rather than appearing all at once. */
+.rise-1 { animation-delay: 60ms; }
+.rise-2 { animation-delay: 120ms; }
+.rise-3 { animation-delay: 180ms; }
+.rise-4 { animation-delay: 240ms; }
+.rise-5 { animation-delay: 300ms; }
+
+/* ---------------------------------------------------------- 6. budget bar */
+
+/**
+ * The proportional budget bar.
+ *
+ * Marked `aria-hidden` in the markup: it is an at-a-glance shape, and the table
+ * beside it carries the same numbers with headers, exact figures and verdicts.
+ * That is the honest division of labour — encoding ten categories in colour
+ * alone and calling it accessible because the swatches have labels would not be.
+ */
+.bar {
+  display: flex;
+  height: 2.75rem;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  transform-origin: left;
+  animation: grow-x 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bar-segment {
+  position: relative;
+  min-width: 2px;
+  transition: filter 140ms ease;
+}
+.bar-segment:hover {
+  filter: brightness(1.12);
+}
+
+/* Hairlines between segments, so adjacent fills never merge visually. */
+.bar-segment + .bar-segment {
+  box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.55);
+}
+
+.swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgb(0 0 0 / 0.14);
+}
+
+/* ------------------------------------------------------------ 7. timeline */
+
+/**
+ * The timeline spine: one vertical rule with a dot per task. Built with a
+ * pseudo-element on the list rather than a border on each item, so the line is
+ * continuous and does not break between month groups.
+ */
+.spine {
+  position: relative;
+  padding-left: 2.25rem;
+}
+.spine::before {
+  content: "";
+  position: absolute;
+  left: 0.6875rem;
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 2px;
+  border-radius: 1px;
+  background: linear-gradient(to bottom, var(--border-strong), var(--border) 40%, var(--border));
+}
+
+.spine-dot {
+  position: absolute;
+  left: -2.25rem;
+  top: 0.3rem;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+/* --------------------------------------------------------------- 8. prose */
 
 /**
  * Markdown rendering for generated narrative.
  *
- * Scoped with a class rather than applied globally, because the only HTML that
- * ends up inside it comes from `react-markdown` — which builds React elements
- * rather than setting innerHTML, so a model cannot inject markup here.
+ * Scoped to a class, because the only content inside it comes from
+ * `react-markdown`, which builds React elements rather than setting innerHTML,
+ * so a hostile model cannot inject markup here.
  */
 .prose-shubh {
-  line-height: 1.7;
+  line-height: 1.72;
 }
-.prose-shubh h2 {
-  font-family: var(--font-serif);
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 1.75rem 0 0.625rem;
-  color: var(--text);
-}
-.prose-shubh h2:first-child {
+.prose-shubh > :first-child {
   margin-top: 0;
 }
+.prose-shubh h2 {
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.5rem;
+  color: var(--accent);
+}
 .prose-shubh h3 {
-  font-size: 1.05rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   margin: 1.25rem 0 0.5rem;
 }
@@ -219,7 +455,7 @@ body {
 .prose-shubh ul,
 .prose-shubh ol {
   margin: 0.75rem 0;
-  padding-left: 1.25rem;
+  padding-left: 1.3rem;
 }
 .prose-shubh ul {
   list-style: disc;
@@ -230,9 +466,11 @@ body {
 .prose-shubh li {
   margin: 0.4rem 0;
 }
+.prose-shubh li::marker {
+  color: var(--accent);
+}
 .prose-shubh strong {
   font-weight: 650;
-  color: var(--text);
 }
 .prose-shubh em {
   color: var(--text-soft);
@@ -242,32 +480,191 @@ body {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.prose-shubh table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
-  font-size: 0.9375rem;
-}
-.prose-shubh th,
-.prose-shubh td {
-  border: 1px solid var(--border);
-  padding: 0.5rem 0.625rem;
-  text-align: left;
-}
-.prose-shubh th {
-  background: var(--surface-sunken);
-  font-weight: 600;
+.prose-shubh del {
+  color: var(--bad);
+  text-decoration-thickness: 2px;
 }
 .prose-shubh code {
-  font-family: var(--font-mono);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 0.875em;
   background: var(--surface-sunken);
-  padding: 0.125rem 0.3rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 0.25rem;
 }
 .prose-shubh blockquote {
-  border-left: 3px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
   padding-left: 0.875rem;
   margin: 1rem 0;
   color: var(--text-soft);
+}
+
+/* ------------------------------------------------------------ 9. controls */
+
+.field {
+  width: 100%;
+  border-radius: 0.625rem;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  padding: 0.625rem 0.75rem;
+  color: var(--text);
+  font-size: 1rem;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.field::placeholder {
+  color: var(--text-faint);
+}
+.field:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 650;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    filter 140ms ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+  filter: brightness(1.06);
+}
+.btn-primary:active {
+  transform: none;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.btn-quiet {
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.btn-quiet:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+/**
+ * Native disclosure, styled.
+ *
+ * `<details>` rather than a JavaScript accordion, so every vendor checklist and
+ * expandable panel opens with scripting disabled, and is already keyboard
+ * accessible and announced correctly.
+ */
+.disclosure > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosure > summary::after {
+  content: "+";
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.disclosure[open] > summary::after {
+  content: "\2212";
+}
+
+/* ------------------------------------------------------------- 10. print */
+
+/**
+ * Printing is a real output.
+ *
+ * A budget circulates as a PDF sent to family, so this is not an afterthought:
+ * controls and gradients drop out, tables and narrative stay, rows do not split
+ * across page breaks, every disclosure is forced open so a printed plan is the
+ * whole plan, and link targets are not expanded — a printed budget covered in
+ * URLs is unreadable.
+ */
+@media print {
+  :root,
+  [data-occasion] {
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #ffffff;
+    --surface-inset: #ffffff;
+    --text: #000000;
+    --text-soft: #333333;
+    --text-faint: #555555;
+    --border: #999999;
+    --border-strong: #666666;
+    --accent: #000000;
+    --shadow-soft: none;
+    --shadow-lift: none;
+  }
+  body {
+    background: #ffffff;
+    background-image: none;
+    font-size: 10.5pt;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .hero,
+  .card {
+    box-shadow: none;
+    background-image: none;
+  }
+  .garland {
+    display: none;
+  }
+  details:not([open]) > *:not(summary) {
+    display: revert !important;
+  }
+  .disclosure > summary::after {
+    content: "";
+  }
+  tr,
+  li,
+  .avoid-break {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  a[href]::after {
+    content: "";
+  }
 }

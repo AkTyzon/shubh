@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Lora } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
 /**
@@ -16,10 +16,19 @@ const inter = Inter({
   display: "swap",
 });
 
-const lora = Lora({
+/**
+ * Fraunces for display type.
+ *
+ * A variable serif with a soft, slightly exuberant character — the right
+ * register for a page about celebrations, where a neutral grotesque reads as a
+ * bank statement. Optical sizing is enabled in the stylesheet so large headings
+ * get the display cut rather than a scaled-up text cut.
+ */
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-lora",
+  variable: "--font-fraunces",
   display: "swap",
+  axes: ["SOFT", "WONK"],
 });
 
 export const metadata: Metadata = {
@@ -62,7 +71,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-IN">
-      <body className={`${inter.variable} ${lora.variable}`}>
+      <body className={`${inter.variable} ${fraunces.variable}`}>
         {/* First focusable element on the page, so a keyboard or screen-reader
             user can skip the header and the form and land on the plan. */}
         <a href="#main" className="skip-link">

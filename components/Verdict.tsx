@@ -1,83 +1,80 @@
-import type { BudgetVerdict, IssueSeverity } from "@/lib/types";
+import type { BudgetVerdict, IssueSeverity, TaskStatus } from "@/lib/types";
 
 /**
  * Status badges.
  *
  * Every badge carries three independent signals: a colour, a word and a glyph.
  *
- * That is not belt-and-braces. A budget table encoded only in red and green is
- * unreadable to roughly one man in twelve, unreadable in a printout, and
- * unreadable to a screen reader — and the information being encoded is "you
- * cannot afford this", which is the most important thing on the page. So the
- * word is always present and always the thing read aloud; the colour is
- * decoration on top of it.
+ * That is not belt-and-braces. The festive palette elsewhere on this page is
+ * decoration and is allowed to be; these badges are the opposite — they carry
+ * the information. A budget table encoded only in red and green is unreadable to
+ * roughly one man in twelve, unreadable in the printout, and unreadable read
+ * aloud, and the thing being encoded is "you cannot afford this". So the word is
+ * always present and always what is announced; the colour is a convenience on
+ * top of it.
  *
- * The glyph is `aria-hidden` so it is not announced as a character name.
+ * Glyphs are `aria-hidden` so they are not read out as character names.
  */
 
-const VERDICT_STYLE: Record<BudgetVerdict, { label: string; glyph: string; className: string }> = {
-  realistic: {
-    label: "Realistic",
-    glyph: "✓",
-    className: "text-[var(--color-good)] bg-[var(--color-good-soft)] border-[var(--color-good)]",
-  },
-  tight: {
-    label: "Tight",
-    glyph: "!",
-    className: "text-[var(--color-warn)] bg-[var(--color-warn-soft)] border-[var(--color-warn)]",
-  },
-  unrealistic: {
-    label: "Not deliverable",
-    glyph: "✕",
-    className: "text-[var(--color-bad)] bg-[var(--color-bad-soft)] border-[var(--color-bad)]",
-  },
-  generous: {
-    label: "Room to move",
-    glyph: "↑",
-    className: "text-[var(--color-cool)] bg-[var(--color-cool-soft)] border-[var(--color-cool)]",
-  },
+interface BadgeStyle {
+  label: string;
+  glyph: string;
+  fg: string;
+  bg: string;
+}
+
+const VERDICT_STYLE: Record<BudgetVerdict, BadgeStyle> = {
+  realistic: { label: "Realistic", glyph: "✓", fg: "var(--good)", bg: "var(--good-soft)" },
+  tight: { label: "Tight", glyph: "!", fg: "var(--warn)", bg: "var(--warn-soft)" },
+  unrealistic: { label: "Not deliverable", glyph: "✕", fg: "var(--bad)", bg: "var(--bad-soft)" },
+  generous: { label: "Room to move", glyph: "↑", fg: "var(--cool)", bg: "var(--cool-soft)" },
 };
+
+const SEVERITY_STYLE: Record<IssueSeverity, BadgeStyle> = {
+  blocker: { label: "Blocker", glyph: "✕", fg: "var(--bad)", bg: "var(--bad-soft)" },
+  warning: { label: "Warning", glyph: "!", fg: "var(--warn)", bg: "var(--warn-soft)" },
+  note: { label: "Worth knowing", glyph: "i", fg: "var(--cool)", bg: "var(--cool-soft)" },
+};
+
+const STATUS_STYLE: Record<TaskStatus, BadgeStyle> = {
+  overdue: { label: "Overdue", glyph: "!", fg: "var(--bad)", bg: "var(--bad-soft)" },
+  "due-now": { label: "This week", glyph: "◆", fg: "var(--warn)", bg: "var(--warn-soft)" },
+  upcoming: { label: "Upcoming", glyph: "○", fg: "var(--text-soft)", bg: "var(--surface-sunken)" },
+};
+
+function Badge({ style }: { style: BadgeStyle }) {
+  return (
+    <span className="pill" style={{ color: style.fg, background: style.bg, borderColor: style.fg }}>
+      <span aria-hidden="true">{style.glyph}</span>
+      {style.label}
+    </span>
+  );
+}
 
 export function VerdictBadge({ verdict }: { verdict: BudgetVerdict }) {
-  const style = VERDICT_STYLE[verdict];
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${style.className}`}
-    >
-      <span aria-hidden="true">{style.glyph}</span>
-      {style.label}
-    </span>
-  );
+  return <Badge style={VERDICT_STYLE[verdict]} />;
 }
-
-const SEVERITY_STYLE: Record<IssueSeverity, { label: string; glyph: string; className: string }> = {
-  blocker: {
-    label: "Blocker",
-    glyph: "✕",
-    className: "text-[var(--color-bad)] bg-[var(--color-bad-soft)] border-[var(--color-bad)]",
-  },
-  warning: {
-    label: "Warning",
-    glyph: "!",
-    className: "text-[var(--color-warn)] bg-[var(--color-warn-soft)] border-[var(--color-warn)]",
-  },
-  note: {
-    label: "Worth knowing",
-    glyph: "i",
-    className: "text-[var(--color-cool)] bg-[var(--color-cool-soft)] border-[var(--color-cool)]",
-  },
-};
 
 export function SeverityBadge({ severity }: { severity: IssueSeverity }) {
-  const style = SEVERITY_STYLE[severity];
+  return <Badge style={SEVERITY_STYLE[severity]} />;
+}
+
+export function StatusBadge({ status }: { status: TaskStatus }) {
+  return <Badge style={STATUS_STYLE[status]} />;
+}
+
+/** The spine dot on the timeline. Decorative: the badge beside it carries the word. */
+export function StatusDot({ status, index }: { status: TaskStatus; index: number }) {
+  const style = STATUS_STYLE[status];
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${style.className}`}
+      aria-hidden="true"
+      className="spine-dot nums"
+      style={{ color: style.fg, background: style.bg }}
     >
-      <span aria-hidden="true">{style.glyph}</span>
-      {style.label}
+      {index}
     </span>
   );
 }
 
-export { VERDICT_STYLE, SEVERITY_STYLE };
+export { STATUS_STYLE, VERDICT_STYLE };
